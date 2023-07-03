@@ -39,7 +39,7 @@ void jdm_error_set_hook(jdm_error_hook_fn function, void* param);
 #define JDM_INFO(fmt, ...) jdm_error_push(JDM_ERROR_LEVEL_INFO, __LINE__, __FILE__, __func__, fmt __VA_OPT__(,) __VA_ARGS__)
 #define JDM_ERROR_CRIT(fmt, ...) jdm_error_report_critical("JFW Error from \"%s\" at line %i: " fmt "\n", __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
 #ifndef NDEBUG
-#define JDM_ENTER_FUNCTION const u32 _jdm_stacktrace_level = jdm_error_enter_function(__func__)
+#define JDM_ENTER_FUNCTION const uint32_t _jdm_stacktrace_level = jdm_error_enter_function(__func__)
 #define JDM_LEAVE_FUNCTION jdm_error_leave_function(__func__, _jdm_stacktrace_level)
 #else
 #define JDM_ENTER_FUNCTION (void)0

@@ -1,4 +1,4 @@
-#include "include/jdm.h"
+#include "../include/jdm.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -96,6 +96,7 @@ void jdm_error_cleanup_thread(void)
     }
     jfree(JDM_THREAD_ERROR_STATE.allocator, JDM_THREAD_ERROR_STATE.errors);
     jfree(JDM_THREAD_ERROR_STATE.allocator, JDM_THREAD_ERROR_STATE.stack_traces);
+    string_stream_destroy(JDM_THREAD_ERROR_STATE.ss);
     memset(&JDM_THREAD_ERROR_STATE, 0, sizeof(JDM_THREAD_ERROR_STATE));
 }
 
@@ -187,7 +188,7 @@ void jdm_error_process(jdm_error_report_fn function, void* param)
     {
         struct jdm_error_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - j];
         JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - j] = NULL;
-        free(msg);
+        jfree(JDM_THREAD_ERROR_STATE.allocator, msg);
     }
     JDM_THREAD_ERROR_STATE.error_count = 0;
 }
