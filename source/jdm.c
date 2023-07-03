@@ -5,43 +5,40 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct jdm_error_message
+struct jdm_message
 {
-    jdm_error_level level;
+    jdm_message_level level;
     const char* file;
     const char* function;
     uint32_t line;
     char message[];
 };
 
-typedef struct jdm_error_state_struct jdm_error_state;
-struct jdm_error_state_struct
+typedef struct jdm_state_struct jdm_state;
+struct jdm_state_struct
 {
-    int32_t init;
-
     char* thrd_name;
     size_t len_name;
 
     uint32_t error_count;
     uint32_t error_capacity;
-    struct jdm_error_message** errors;
+    struct jdm_message** errors;
 
     uint32_t stacktrace_count;
     uint32_t stacktrace_capacity;
     const char** stack_traces;
 
-    jdm_error_level level;
+    jdm_message_level level;
 
     jdm_error_hook_fn hook;
     void* hook_param;
 };
 
-_Thread_local jdm_error_state JDM_THREAD_ERROR_STATE;
+_Thread_local jdm_state JDM_THREAD_ERROR_STATE;
 
-int jdm_error_init_thread(
-        char* thread_name, jdm_error_level level, uint32_t max_stack_trace, uint32_t max_errors)
+int jdm_init_thread(
+        char* thread_name, jdm_message_level level, uint32_t max_stack_trace, uint32_t max_errors)
 {
-    assert(JDM_THREAD_ERROR_STATE.init == 0);
     JDM_THREAD_ERROR_STATE.len_name = thread_name ? strlen(thread_name) : 0;
     char* name = NULL;
     if (JDM_THREAD_ERROR_STATE.len_name)
@@ -78,7 +75,7 @@ int jdm_error_init_thread(
     return 0;
 }
 
-void jdm_error_cleanup_thread(void)
+void jdm_cleanup_thread(void)
 {
     assert(JDM_THREAD_ERROR_STATE.stacktrace_count == 0);
     free(JDM_THREAD_ERROR_STATE.thrd_name);
@@ -91,7 +88,7 @@ void jdm_error_cleanup_thread(void)
     memset(&JDM_THREAD_ERROR_STATE, 0, sizeof(JDM_THREAD_ERROR_STATE));
 }
 
-uint32_t jdm_error_enter_function(const char* fn_name)
+uint32_t jdm_enter_function(const char* fn_name)
 {
     uint32_t id = JDM_THREAD_ERROR_STATE.stacktrace_count;
     if (JDM_THREAD_ERROR_STATE.stacktrace_count < JDM_THREAD_ERROR_STATE.stacktrace_capacity)
@@ -101,7 +98,7 @@ uint32_t jdm_error_enter_function(const char* fn_name)
     return id;
 }
 
-void jdm_error_leave_function(const char* fn_name, uint32_t level)
+void jdm_leave_function(const char* fn_name, uint32_t level)
 {
     if (level < JDM_THREAD_ERROR_STATE.stacktrace_capacity)
     {
@@ -116,7 +113,7 @@ void jdm_error_leave_function(const char* fn_name, uint32_t level)
     }
 }
 
-void jdm_error_push(jdm_error_level level, uint32_t line, const char* file, const char* function, const char* fmt, ...)
+void jdm_push(jdm_message_level level, uint32_t line, const char* file, const char* function, const char* fmt, ...)
 {
     if (level < JDM_THREAD_ERROR_STATE.level || JDM_THREAD_ERROR_STATE.error_count == JDM_THREAD_ERROR_STATE.error_capacity) return;
     va_list args1, args2;
@@ -124,7 +121,7 @@ void jdm_error_push(jdm_error_level level, uint32_t line, const char* file, cons
     va_copy(args2, args1);
     const size_t error_length = JDM_THREAD_ERROR_STATE.len_name + vsnprintf(NULL, 0, fmt, args1) + 4;
     va_end(args1);
-    struct jdm_error_message* message = malloc(sizeof(*message) + error_length);
+    struct jdm_message* message = malloc(sizeof(*message) + error_length);
     assert(message);
     size_t used = vsnprintf(message->message, error_length, fmt, args2);
     va_end(args2);
@@ -149,7 +146,7 @@ void jdm_error_push(jdm_error_level level, uint32_t line, const char* file, cons
     }
 }
 
-void jdm_error_report_critical(const char* fmt, ...)
+void jdm_report_fatal(const char* fmt, ...)
 {
     fprintf(stderr, "Critical error:\n");
     va_list args;
@@ -165,54 +162,57 @@ void jdm_error_report_critical(const char* fmt, ...)
     exit(EXIT_FAILURE);
 }
 
-void jdm_error_process(jdm_error_report_fn function, void* param)
+void jdm_process(jdm_error_report_fn function, void* param)
 {
     assert(function);
     uint32_t i;
     for (i = 0; i < JDM_THREAD_ERROR_STATE.error_count; ++i)
     {
-        struct jdm_error_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - i];
+        struct jdm_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - i];
         const int32_t ret = function(JDM_THREAD_ERROR_STATE.error_count, i, msg->level, msg->line, msg->file, msg->function, msg->message, param);
         if (ret < 0) break;
     }
     for (uint32_t j = 0; j < i; ++j)
     {
-        struct jdm_error_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - j];
+        struct jdm_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - j];
         JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - j] = NULL;
         free(msg);
     }
     JDM_THREAD_ERROR_STATE.error_count = 0;
 }
 
-void jdm_error_peek(jdm_error_report_fn function, void* param)
+void jdm_peek(jdm_error_report_fn function, void* param)
 {
     assert(function);
     uint32_t i;
     for (i = 0; i < JDM_THREAD_ERROR_STATE.error_count; ++i)
     {
-        struct jdm_error_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - i];
+        struct jdm_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - i];
         const int32_t ret = function(JDM_THREAD_ERROR_STATE.error_count, JDM_THREAD_ERROR_STATE.error_count - 1 - i, msg->level, msg->line, msg->file, msg->function, msg->message, param);
         if (ret < 0) break;
     }
 }
 
-void jdm_error_set_hook(jdm_error_hook_fn function, void* param)
+void jdm_set_hook(jdm_error_hook_fn function, void* param)
 {
     JDM_THREAD_ERROR_STATE.hook = function;
     JDM_THREAD_ERROR_STATE.hook_param = param;
 }
 
-const char* jdm_error_level_str(jdm_error_level level)
+const char* jdm_message_level_str(jdm_message_level level)
 {
     static const char* const NAMES[] =
             {
-                    [JDM_ERROR_LEVEL_NONE] = "JDM_ERROR_LEVEL_NONE" ,
-                    [JDM_ERROR_LEVEL_INFO] = "JDM_ERROR_LEVEL_INFO" ,
-                    [JDM_ERROR_LEVEL_WARN] = "JDM_ERROR_LEVEL_WARN" ,
-                    [JDM_ERROR_LEVEL_ERR] = "JDM_ERROR_LEVEL_ERR"  ,
-                    [JDM_ERROR_LEVEL_CRIT] = "JDM_ERROR_LEVEL_CRIT" ,
+
+                    [JDM_MESSAGE_LEVEL_NONE] = "JDM_MESSAGE_LEVEL_NONE",
+                    [JDM_MESSAGE_LEVEL_DEBUG] = "JDM_MESSAGE_LEVEL_DEBUG",
+                    [JDM_MESSAGE_LEVEL_TRACE] = "JDM_MESSAGE_LEVEL_TRACE",
+                    [JDM_MESSAGE_LEVEL_INFO] = "JDM_MESSAGE_LEVEL_INFO",
+                    [JDM_MESSAGE_LEVEL_WARN] = "JDM_MESSAGE_LEVEL_WARN",
+                    [JDM_MESSAGE_LEVEL_ERR] = "JDM_MESSAGE_LEVEL_ERR",
+                    [JDM_MESSAGE_LEVEL_CRIT] = "JDM_MESSAGE_LEVEL_CRIT",
             };
-    if (level >= JDM_ERROR_LEVEL_NONE && level <= JDM_ERROR_LEVEL_CRIT)
+    if (level >= JDM_MESSAGE_LEVEL_NONE && level <= JDM_MESSAGE_LEVEL_CRIT)
     {
         return NAMES[level];
     }
