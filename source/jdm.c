@@ -5,8 +5,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <jfmt/jfmt.h>
-
 struct jdm_error_message
 {
     jdm_error_level level;
@@ -36,22 +34,19 @@ struct jdm_error_state_struct
 
     jdm_error_hook_fn hook;
     void* hook_param;
-
-    jallocator* allocator;
-    string_stream* ss;
 };
 
 _Thread_local jdm_error_state JDM_THREAD_ERROR_STATE;
 
 int jdm_error_init_thread(
-        char* thread_name, jdm_error_level level, uint32_t max_stack_trace, uint32_t max_errors, jallocator* allocator)
+        char* thread_name, jdm_error_level level, uint32_t max_stack_trace, uint32_t max_errors)
 {
     assert(JDM_THREAD_ERROR_STATE.init == 0);
     JDM_THREAD_ERROR_STATE.len_name = thread_name ? strlen(thread_name) : 0;
     char* name = NULL;
     if (JDM_THREAD_ERROR_STATE.len_name)
     {
-        name = jalloc(allocator, JDM_THREAD_ERROR_STATE.len_name + 1);
+        name = malloc(JDM_THREAD_ERROR_STATE.len_name + 1);
         if (!name)
         {
             return -1;
@@ -62,41 +57,37 @@ int jdm_error_init_thread(
     JDM_THREAD_ERROR_STATE.thrd_name = name;
     assert(JDM_THREAD_ERROR_STATE.thrd_name != NULL);
     JDM_THREAD_ERROR_STATE.level = level;
-    JDM_THREAD_ERROR_STATE.errors = jalloc(allocator, max_errors * sizeof(*JDM_THREAD_ERROR_STATE.errors));;
+    JDM_THREAD_ERROR_STATE.errors = malloc(max_errors * sizeof(*JDM_THREAD_ERROR_STATE.errors));;
     if (!JDM_THREAD_ERROR_STATE.errors)
     {
-        jfree(allocator, JDM_THREAD_ERROR_STATE.thrd_name);
+        free(JDM_THREAD_ERROR_STATE.thrd_name);
         return -1;
     }
     assert(JDM_THREAD_ERROR_STATE.errors != NULL);
     JDM_THREAD_ERROR_STATE.error_capacity = max_errors;
 
-    JDM_THREAD_ERROR_STATE.stack_traces = jalloc(allocator, max_stack_trace * sizeof(char*));
+    JDM_THREAD_ERROR_STATE.stack_traces = malloc(max_stack_trace * sizeof(char*));
     if (!JDM_THREAD_ERROR_STATE.stack_traces)
     {
-        jfree(allocator, JDM_THREAD_ERROR_STATE.errors);
-        jfree(allocator, JDM_THREAD_ERROR_STATE.thrd_name);
+        free(JDM_THREAD_ERROR_STATE.errors);
+        free(JDM_THREAD_ERROR_STATE.thrd_name);
         return -1;
     }
     assert(JDM_THREAD_ERROR_STATE.stack_traces != NULL);
     JDM_THREAD_ERROR_STATE.stacktrace_capacity = max_stack_trace;
-    JDM_THREAD_ERROR_STATE.allocator = allocator;
-    JDM_THREAD_ERROR_STATE.ss;
-    string_stream_create(allocator, &JDM_THREAD_ERROR_STATE.ss);
     return 0;
 }
 
 void jdm_error_cleanup_thread(void)
 {
     assert(JDM_THREAD_ERROR_STATE.stacktrace_count == 0);
-    jfree(JDM_THREAD_ERROR_STATE.allocator, JDM_THREAD_ERROR_STATE.thrd_name);
+    free(JDM_THREAD_ERROR_STATE.thrd_name);
     for (uint32_t i = 0; i < JDM_THREAD_ERROR_STATE.error_count; ++i)
     {
-        jfree(JDM_THREAD_ERROR_STATE.allocator, JDM_THREAD_ERROR_STATE.errors[i]);
+        free(JDM_THREAD_ERROR_STATE.errors[i]);
     }
-    jfree(JDM_THREAD_ERROR_STATE.allocator, JDM_THREAD_ERROR_STATE.errors);
-    jfree(JDM_THREAD_ERROR_STATE.allocator, JDM_THREAD_ERROR_STATE.stack_traces);
-    string_stream_destroy(JDM_THREAD_ERROR_STATE.ss);
+    free(JDM_THREAD_ERROR_STATE.errors);
+    free(JDM_THREAD_ERROR_STATE.stack_traces);
     memset(&JDM_THREAD_ERROR_STATE, 0, sizeof(JDM_THREAD_ERROR_STATE));
 }
 
@@ -133,7 +124,7 @@ void jdm_error_push(jdm_error_level level, uint32_t line, const char* file, cons
     va_copy(args2, args1);
     const size_t error_length = JDM_THREAD_ERROR_STATE.len_name + vsnprintf(NULL, 0, fmt, args1) + 4;
     va_end(args1);
-    struct jdm_error_message* message = jalloc(JDM_THREAD_ERROR_STATE.allocator, sizeof(*message) + error_length);
+    struct jdm_error_message* message = malloc(sizeof(*message) + error_length);
     assert(message);
     size_t used = vsnprintf(message->message, error_length, fmt, args2);
     va_end(args2);
@@ -154,7 +145,7 @@ void jdm_error_push(jdm_error_level level, uint32_t line, const char* file, cons
     }
     else
     {
-        jfree(JDM_THREAD_ERROR_STATE.allocator, message);
+        free(message);
     }
 }
 
@@ -188,7 +179,7 @@ void jdm_error_process(jdm_error_report_fn function, void* param)
     {
         struct jdm_error_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - j];
         JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - j] = NULL;
-        jfree(JDM_THREAD_ERROR_STATE.allocator, msg);
+        free(msg);
     }
     JDM_THREAD_ERROR_STATE.error_count = 0;
 }

@@ -7,7 +7,6 @@ set(CMAKE_C_STANDARD 99)
 
 
 add_library(jdm SHARED source/jdm.c)
-target_link_libraries(jdm jmem jfmt)
 
 
 target_sources(jdm PUBLIC FILE_SET jdm_headers TYPE HEADERS BASE_DIRS include FILES include/jdm.h)

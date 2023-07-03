@@ -2,7 +2,6 @@
 #define JDM_JDM_H
 #include <errno.h>
 #include <stdint.h>
-#include <jmem/jmem.h>
 
 typedef enum jdm_error_level_enum jdm_error_level;
 enum jdm_error_level_enum
@@ -17,7 +16,7 @@ enum jdm_error_level_enum
 const char* jdm_error_level_str(jdm_error_level level);
 
 int jdm_error_init_thread(
-        char* thread_name, jdm_error_level level, uint32_t max_stack_trace, uint32_t max_errors, jallocator* allocator);
+        char* thread_name, jdm_error_level level, uint32_t max_stack_trace, uint32_t max_errors);
 void jdm_error_cleanup_thread(void);
 
 uint32_t jdm_error_enter_function(const char* fn_name);
