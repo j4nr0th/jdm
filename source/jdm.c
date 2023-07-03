@@ -41,7 +41,6 @@ _Thread_local jdm_state JDM_THREAD_ERROR_STATE;
 int jdm_init_thread(
         char* thread_name, jdm_message_level level, uint32_t max_stack_trace, uint32_t max_errors, jallocator* allocator)
 {
-    assert(JDM_THREAD_ERROR_STATE.init == 0);
     JDM_THREAD_ERROR_STATE.len_name = thread_name ? strlen(thread_name) : 0;
     char* name = NULL;
     if (JDM_THREAD_ERROR_STATE.len_name)
@@ -207,13 +206,16 @@ const char* jdm_message_level_str(jdm_message_level level)
 {
     static const char* const NAMES[] =
             {
-                    [JDM_ERROR_LEVEL_NONE] = "JDM_ERROR_LEVEL_NONE" ,
-                    [JDM_ERROR_LEVEL_INFO] = "JDM_ERROR_LEVEL_INFO" ,
-                    [JDM_ERROR_LEVEL_WARN] = "JDM_ERROR_LEVEL_WARN" ,
-                    [JDM_ERROR_LEVEL_ERR] = "JDM_ERROR_LEVEL_ERR"  ,
-                    [JDM_ERROR_LEVEL_CRIT] = "JDM_ERROR_LEVEL_CRIT" ,
+
+                    [JDM_MESSAGE_LEVEL_NONE] = "JDM_MESSAGE_LEVEL_NONE",
+                    [JDM_MESSAGE_LEVEL_DEBUG] = "JDM_MESSAGE_LEVEL_DEBUG",
+                    [JDM_MESSAGE_LEVEL_TRACE] = "JDM_MESSAGE_LEVEL_TRACE",
+                    [JDM_MESSAGE_LEVEL_INFO] = "JDM_MESSAGE_LEVEL_INFO",
+                    [JDM_MESSAGE_LEVEL_WARN] = "JDM_MESSAGE_LEVEL_WARN",
+                    [JDM_MESSAGE_LEVEL_ERR] = "JDM_MESSAGE_LEVEL_ERR",
+                    [JDM_MESSAGE_LEVEL_CRIT] = "JDM_MESSAGE_LEVEL_CRIT",
             };
-    if (level >= JDM_ERROR_LEVEL_NONE && level <= JDM_ERROR_LEVEL_CRIT)
+    if (level >= JDM_MESSAGE_LEVEL_NONE && level <= JDM_MESSAGE_LEVEL_CRIT)
     {
         return NAMES[level];
     }
