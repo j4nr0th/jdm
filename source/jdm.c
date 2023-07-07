@@ -126,8 +126,8 @@ void jdm_push_va(
     va_end(args1);
     struct jdm_message* message = jalloc(JDM_THREAD_ERROR_STATE.allocator, sizeof(*message) + error_length);
     assert(message);
-    size_t used = vsnprintf(message->message, error_length, fmt, args1);
-    va_end(args1);
+    size_t used = vsnprintf(message->message, error_length, fmt, args);
+    va_end(args);
     int32_t put_in_stack = 1;
     if (JDM_THREAD_ERROR_STATE.hook)
     {

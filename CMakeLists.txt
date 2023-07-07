@@ -16,3 +16,10 @@ install(TARGETS jdm
         DESTINATION "/usr/include"
         LIBRARY
         DESTINATION "/usr/lib")
+
+enable_testing()
+
+add_executable(simple_test source/tests/simple_test.c)
+target_link_libraries(simple_test PRIVATE jdm jmem)
+add_test(NAME simple COMMAND simple_test)
+
