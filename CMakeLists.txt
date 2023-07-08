@@ -8,7 +8,6 @@ set(CMAKE_C_STANDARD 99)
 
 add_library(jdm SHARED source/jdm.c)
 
-
 target_sources(jdm PUBLIC FILE_SET jdm_headers TYPE HEADERS BASE_DIRS include FILES include/jdm.h)
 install(TARGETS jdm
         FILE_SET jdm_headers
@@ -19,6 +18,6 @@ install(TARGETS jdm
 enable_testing()
 
 add_executable(simple_test source/tests/simple_test.c)
-target_link_libraries(simple_test PRIVATE jdm jmem)
+target_link_libraries(simple_test PRIVATE jdm)
 add_test(NAME simple COMMAND simple_test)
 

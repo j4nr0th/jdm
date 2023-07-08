@@ -31,7 +31,8 @@ int main()
             "master",
             JDM_MESSAGE_LEVEL_NONE,
             32,
-            32
+            32,
+            NULL
             ) == 0);
     JDM_ENTER_FUNCTION;
 
