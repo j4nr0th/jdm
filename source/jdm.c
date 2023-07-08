@@ -163,25 +163,30 @@ void jdm_push(jdm_message_level level, uint32_t line, const char* file, const ch
     va_end(args);
 }
 
-void jdm_report_fatal_va(const char* fmt, va_list args)
+void jdm_report_fatal_va(uint32_t line, const char* file, const char* function, const char* fmt, va_list args)
 {
-    fprintf(stderr, "Critical error:\n");
-    vfprintf(stderr, fmt, args);
-    fprintf(stderr, "\t(%s : %s", JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stack_traces[0]);
-    for (uint32_t i = 1; i < JDM_THREAD_ERROR_STATE.stacktrace_count; ++i)
-    {
-        fprintf(stderr, " -> %s", JDM_THREAD_ERROR_STATE.stack_traces[i]);
+    size_t len = vsnprintf(NULL, 0, fmt, args);
+    char msg[len];
+    vsnprintf(msg, len, fmt, args);
+    if (JDM_THREAD_ERROR_STATE.hook){
+        JDM_THREAD_ERROR_STATE.hook(JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stacktrace_count, JDM_THREAD_ERROR_STATE.stack_traces, JDM_MESSAGE_LEVEL_FATAL, line, file, function, msg, JDM_THREAD_ERROR_STATE.hook_param);
+    }else{
+        fprintf(stderr, "Critical error:\n%s", msg);
+        fprintf(stderr, "\t(%s : %s", JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stack_traces[0]);
+        for (uint32_t i = 1; i < JDM_THREAD_ERROR_STATE.stacktrace_count; ++i)
+        {
+            fprintf(stderr, " -> %s", JDM_THREAD_ERROR_STATE.stack_traces[i]);
+        }
+        fprintf(stderr, ")\nTerminating program\n");
     }
-    fprintf(stderr, ")\nTerminating program\n");
     exit(EXIT_FAILURE);
 }
 
-void jdm_report_fatal(const char* fmt, ...)
+void jdm_report_fatal(uint32_t line, const char* file, const char* function, const char* fmt, ...)
 {
-    fprintf(stderr, "Critical error:\n");
     va_list args;
     va_start(args, fmt);
-    jdm_report_fatal_va(fmt, args);
+    jdm_report_fatal_va(line, file, function, fmt, args);
 }
 
 void jdm_process(jdm_error_report_fn function, void* param)
@@ -233,8 +238,9 @@ const char* jdm_message_level_str(jdm_message_level level)
                     [JDM_MESSAGE_LEVEL_WARN] = "Warn",
                     [JDM_MESSAGE_LEVEL_ERR] = "Error",
                     [JDM_MESSAGE_LEVEL_CRIT] = "Critical",
+                    [JDM_MESSAGE_LEVEL_FATAL] = "Fatal",
             };
-    if (level >= JDM_MESSAGE_LEVEL_NONE && level <= JDM_MESSAGE_LEVEL_CRIT)
+    if (level >= JDM_MESSAGE_LEVEL_NONE && level <= JDM_MESSAGE_LEVEL_FATAL)
     {
         return NAMES[level];
     }
