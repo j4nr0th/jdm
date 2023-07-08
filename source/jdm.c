@@ -88,6 +88,15 @@ void jdm_cleanup_thread(void)
     memset(&JDM_THREAD_ERROR_STATE, 0, sizeof(JDM_THREAD_ERROR_STATE));
 }
 
+void jdm_get_stacktrace(const char*const** stack_trace_out, uint32_t *stack_trace_count_out){
+    *stack_trace_count_out = JDM_THREAD_ERROR_STATE.stacktrace_count;
+    *stack_trace_out = JDM_THREAD_ERROR_STATE.stack_traces;
+}
+
+const char* jdm_get_thread_name(){
+    return JDM_THREAD_ERROR_STATE.thrd_name;
+}
+
 uint32_t jdm_enter_function(const char* fn_name)
 {
     uint32_t id = JDM_THREAD_ERROR_STATE.stacktrace_count;

@@ -27,6 +27,9 @@ GCC_ONLY(__attribute__((warn_unused_result))) const char* jdm_message_level_str(
 int jdm_init_thread(char* thread_name, jdm_message_level level, uint32_t max_stack_trace, uint32_t max_errors);
 void jdm_cleanup_thread(void);
 
+void jdm_get_stacktrace(const char*const** stack_trace_out, uint32_t *stack_trace_count_out);
+const char* jdm_get_thread_name();
+
 GCC_ONLY(__attribute__((nonnull(1)))) uint32_t jdm_enter_function(const char* fn_name);
 
 GCC_ONLY(__attribute__((nonnull(1)))) void jdm_leave_function(const char* fn_name, uint32_t level);
