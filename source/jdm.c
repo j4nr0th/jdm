@@ -217,13 +217,13 @@ const char* jdm_message_level_str(jdm_message_level level)
     static const char* const NAMES[] =
             {
 
-                    [JDM_MESSAGE_LEVEL_NONE] = "JDM_MESSAGE_LEVEL_NONE",
-                    [JDM_MESSAGE_LEVEL_DEBUG] = "JDM_MESSAGE_LEVEL_DEBUG",
-                    [JDM_MESSAGE_LEVEL_TRACE] = "JDM_MESSAGE_LEVEL_TRACE",
-                    [JDM_MESSAGE_LEVEL_INFO] = "JDM_MESSAGE_LEVEL_INFO",
-                    [JDM_MESSAGE_LEVEL_WARN] = "JDM_MESSAGE_LEVEL_WARN",
-                    [JDM_MESSAGE_LEVEL_ERR] = "JDM_MESSAGE_LEVEL_ERR",
-                    [JDM_MESSAGE_LEVEL_CRIT] = "JDM_MESSAGE_LEVEL_CRIT",
+                    [JDM_MESSAGE_LEVEL_NONE] = "None",
+                    [JDM_MESSAGE_LEVEL_DEBUG] = "Debug",
+                    [JDM_MESSAGE_LEVEL_TRACE] = "Trace",
+                    [JDM_MESSAGE_LEVEL_INFO] = "Info",
+                    [JDM_MESSAGE_LEVEL_WARN] = "Warn",
+                    [JDM_MESSAGE_LEVEL_ERR] = "Error",
+                    [JDM_MESSAGE_LEVEL_CRIT] = "Critical",
             };
     if (level >= JDM_MESSAGE_LEVEL_NONE && level <= JDM_MESSAGE_LEVEL_CRIT)
     {

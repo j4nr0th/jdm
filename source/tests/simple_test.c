@@ -27,14 +27,11 @@ int err_hook(const char* thread_name, uint32_t stack_trace_count, const char*con
 
 int main()
 {
-    jallocator* allocator = jallocator_create(1 << 10, 1);
-    ASSERT(allocator != NULL);
     ASSERT(jdm_init_thread(
             "master",
             JDM_MESSAGE_LEVEL_NONE,
             32,
-            32,
-            allocator
+            32
             ) == 0);
     JDM_ENTER_FUNCTION;
 
@@ -44,7 +41,6 @@ int main()
 
     JDM_LEAVE_FUNCTION;
     jdm_cleanup_thread();
-    jallocator_destroy(allocator);
     return 0;
 }
 
