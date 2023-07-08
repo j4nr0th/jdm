@@ -34,16 +34,19 @@ enum jdm_message_level_enum
 GCC_ONLY(__attribute__((warn_unused_result)))
 const char* jdm_message_level_str(jdm_message_level level);
 
-int jdm_init_thread(char* thread_name, jdm_message_level level,
-                    uint32_t max_stack_trace, uint32_t max_errors,
-                    const jdm_allocator_callbacks* allocator_callbacks);
+int jdm_init_thread(
+        const char* thread_name, jdm_message_level level,
+        uint32_t max_stack_trace, uint32_t max_errors,
+        const jdm_allocator_callbacks* allocator_callbacks);
 void jdm_cleanup_thread(void);
 
-GCC_ONLY(__attribute((nonnull(1,2))))
-void jdm_get_stacktrace(const char*const** stack_trace_out, uint32_t *stack_trace_count_out);
+GCC_ONLY(__attribute__((nonnull(1, 2))))
+void jdm_get_stacktrace(const char* const** stack_trace_out, uint32_t* stack_trace_count_out);
 
 GCC_ONLY(__attribute__((warn_unused_result)))
 const char* jdm_get_thread_name();
+
+void jdm_set_message_level(jdm_message_level level);
 
 GCC_ONLY(__attribute__((nonnull(1))))
 uint32_t jdm_enter_function(const char* fn_name);
@@ -66,7 +69,7 @@ void jdm_report_fatal_va(uint32_t line, const char* file, const char* function, 
 
 typedef int (*jdm_error_report_fn)(uint32_t total_count, uint32_t index, jdm_message_level level, uint32_t line,
         const char* file, const char* function, const char* message, void* param);
-typedef int (*jdm_error_hook_fn)(const char* thread_name, uint32_t stack_trace_count, const char*const* stack_trace,
+typedef int (*jdm_error_hook_fn)(const char* thread_name, uint32_t stack_trace_count, const char* const* stack_trace,
         jdm_message_level level, uint32_t line, const char* file, const char* function, const char* message, void* param);
 
 GCC_ONLY(__attribute__((nonnull(1))))

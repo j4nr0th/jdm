@@ -58,7 +58,7 @@ static const jdm_allocator_callbacks DEFAULT_CALLBACKS =
         };
 
 int jdm_init_thread(
-        char* thread_name, jdm_message_level level, uint32_t max_stack_trace, uint32_t max_errors,
+        const char* thread_name, jdm_message_level level, uint32_t max_stack_trace, uint32_t max_errors,
         const jdm_allocator_callbacks* allocator_callbacks)
 {
     if (!allocator_callbacks)
@@ -115,7 +115,7 @@ void jdm_cleanup_thread(void)
     memset(&JDM_THREAD_ERROR_STATE, 0, sizeof(JDM_THREAD_ERROR_STATE));
 }
 
-void jdm_get_stacktrace(const char*const** stack_trace_out, uint32_t *stack_trace_count_out){
+void jdm_get_stacktrace(const char* const** stack_trace_out, uint32_t* stack_trace_count_out){
     *stack_trace_count_out = JDM_THREAD_ERROR_STATE.stacktrace_count;
     *stack_trace_out = JDM_THREAD_ERROR_STATE.stack_traces;
 }
@@ -273,4 +273,9 @@ const char* jdm_message_level_str(jdm_message_level level)
         return NAMES[level];
     }
     return NULL;
+}
+
+void jdm_set_message_level(jdm_message_level level)
+{
+    JDM_THREAD_ERROR_STATE.level = level;
 }
