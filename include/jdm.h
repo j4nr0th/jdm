@@ -28,6 +28,7 @@ enum jdm_message_level_enum
     JDM_MESSAGE_LEVEL_WARN,
     JDM_MESSAGE_LEVEL_ERR,
     JDM_MESSAGE_LEVEL_CRIT,
+    JDM_MESSAGE_LEVEL_FATAL,
 };
 
 GCC_ONLY(__attribute__((warn_unused_result)))
@@ -37,6 +38,12 @@ int jdm_init_thread(char* thread_name, jdm_message_level level,
                     uint32_t max_stack_trace, uint32_t max_errors,
                     const jdm_allocator_callbacks* allocator_callbacks);
 void jdm_cleanup_thread(void);
+
+GCC_ONLY(__attribute((nonnull(1,2))))
+void jdm_get_stacktrace(const char*const** stack_trace_out, uint32_t *stack_trace_count_out);
+
+GCC_ONLY(__attribute__((warn_unused_result)))
+const char* jdm_get_thread_name();
 
 GCC_ONLY(__attribute__((nonnull(1))))
 uint32_t jdm_enter_function(const char* fn_name);
@@ -51,11 +58,11 @@ void jdm_push(jdm_message_level level, uint32_t line, const char* file,
 void jdm_push_va(jdm_message_level level, uint32_t line, const char* file, const char* function, const char* fmt,
                  va_list args);
 
-GCC_ONLY(__attribute__((format(printf, 1, 2))))
-void jdm_report_fatal(const char* fmt, ...);
+GCC_ONLY(__attribute__((format(printf, 4, 5))))
+void jdm_report_fatal(uint32_t line, const char* file, const char* function, const char* fmt, ...);
 
 GCC_ONLY(__attribute__((noreturn)))
-void jdm_report_fatal_va(const char* fmt, va_list args);
+void jdm_report_fatal_va(uint32_t line, const char* file, const char* function, const char* fmt, va_list args);
 
 typedef int (*jdm_error_report_fn)(uint32_t total_count, uint32_t index, jdm_message_level level, uint32_t line,
         const char* file, const char* function, const char* message, void* param);
@@ -78,14 +85,14 @@ void jdm_set_hook(jdm_error_hook_fn function, void* param);
 #define JDM_INFO(fmt, ...) jdm_push(JDM_MESSAGE_LEVEL_INFO, __LINE__, __FILE__, __func__, fmt __VA_OPT__(,) __VA_ARGS__)
 #define JDM_TRACE(fmt, ...) jdm_push(JDM_MESSAGE_LEVEL_TRACE, __LINE__, __FILE__, __func__, fmt __VA_OPT__(,) __VA_ARGS__)
 #define JDM_DEBUG(fmt, ...) jdm_push(JDM_MESSAGE_LEVEL_DEBUG, __LINE__, __FILE__, __func__, fmt __VA_OPT__(,) __VA_ARGS__)
-#define JDM_FATAL(fmt, ...) jdm_report_fatal("Fatal error in %s:%i: "fmt "\n", __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+#define JDM_FATAL(fmt, ...) jdm_report_fatal(__LINE__, __FILE__, __func__, fmt __VA_OPT__(,) __VA_ARGS__)
 #define JDM_CRIT_VA(fmt, va) jdm_push_va(JDM_MESSAGE_LEVEL_CRIT, __LINE__, __FILE__, __func__, fmt, (va))
 #define JDM_ERROR_VA(fmt, va) jdm_push_va(JDM_MESSAGE_LEVEL_ERR, __LINE__, __FILE__, __func__, fmt, (va))
 #define JDM_WARN_VA(fmt, va) jdm_push_va(JDM_MESSAGE_LEVEL_WARN, __LINE__, __FILE__, __func__, fmt, (va))
 #define JDM_INFO_VA(fmt, va) jdm_push_va(JDM_MESSAGE_LEVEL_INFO, __LINE__, __FILE__, __func__, fmt, (va))
 #define JDM_TRACE_VA(fmt, va) jdm_push_va(JDM_MESSAGE_LEVEL_TRACE, __LINE__, __FILE__, __func__, fmt, (va))
 #define JDM_DEBUG_VA(fmt, va) jdm_push_va(JDM_MESSAGE_LEVEL_DEBUG, __LINE__, __FILE__, __func__, fmt, (va))
-#define JDM_FATAL_VA(fmt, va) jdm_report_fatal_va("Fatal error in %s:%i: "fmt "\n", __FILE__, __LINE__, (va))
+#define JDM_FATAL_VA(fmt, va) jdm_report_fatal_va(__LINE__, __FILE__, __func__, fmt, (va))
 
 #if !defined(NDEBUG) || defined(JDM_STACKTRACE)
 #define JDM_ENTER_FUNCTION const uint32_t _jdm_stacktrace_level = jdm_enter_function(__func__)
