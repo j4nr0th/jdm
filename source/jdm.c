@@ -113,19 +113,18 @@ void jdm_leave_function(const char* fn_name, uint32_t level)
     }
 }
 
-void jdm_push(jdm_message_level level, uint32_t line, const char* file, const char* function, const char* fmt, ...)
+void jdm_push_va(
+        jdm_message_level level, uint32_t line, const char* file, const char* function, const char* fmt, va_list args)
 {
     if (level < JDM_THREAD_ERROR_STATE.level || JDM_THREAD_ERROR_STATE.error_count == JDM_THREAD_ERROR_STATE.error_capacity) return;
-    va_list args1, args2;
-    va_start(args1, fmt);
-    va_copy(args2, args1);
-    const size_t error_length = JDM_THREAD_ERROR_STATE.len_name + vsnprintf(NULL, 0, fmt, args1) + 4;
+    va_list args1;
+    va_copy(args1, args);
+    const size_t error_length = vsnprintf(NULL, 0, fmt, args1) + 1;
     va_end(args1);
     struct jdm_message* message = malloc(sizeof(*message) + error_length);
     assert(message);
-    size_t used = vsnprintf(message->message, error_length, fmt, args2);
-    va_end(args2);
-    snprintf(message->message + used, error_length - used, " (%s)", JDM_THREAD_ERROR_STATE.thrd_name);
+    size_t used = vsnprintf(message->message, error_length, fmt, args);
+    va_end(args);
     int32_t put_in_stack = 1;
     if (JDM_THREAD_ERROR_STATE.hook)
     {
@@ -146,13 +145,19 @@ void jdm_push(jdm_message_level level, uint32_t line, const char* file, const ch
     }
 }
 
-void jdm_report_fatal(const char* fmt, ...)
+void jdm_push(jdm_message_level level, uint32_t line, const char* file, const char* function, const char* fmt, ...)
 {
-    fprintf(stderr, "Critical error:\n");
+    if (level < JDM_THREAD_ERROR_STATE.level || JDM_THREAD_ERROR_STATE.error_count == JDM_THREAD_ERROR_STATE.error_capacity) return;
     va_list args;
     va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
+    jdm_push_va(level, line, file, function, fmt, args);
     va_end(args);
+}
+
+void jdm_report_fatal_va(const char* fmt, va_list args)
+{
+    fprintf(stderr, "Critical error:\n");
+    vfprintf(stderr, fmt, args);
     fprintf(stderr, "\t(%s : %s", JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stack_traces[0]);
     for (uint32_t i = 1; i < JDM_THREAD_ERROR_STATE.stacktrace_count; ++i)
     {
@@ -160,6 +165,14 @@ void jdm_report_fatal(const char* fmt, ...)
     }
     fprintf(stderr, ")\nTerminating program\n");
     exit(EXIT_FAILURE);
+}
+
+void jdm_report_fatal(const char* fmt, ...)
+{
+    fprintf(stderr, "Critical error:\n");
+    va_list args;
+    va_start(args, fmt);
+    jdm_report_fatal_va(fmt, args);
 }
 
 void jdm_process(jdm_error_report_fn function, void* param)
