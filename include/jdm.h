@@ -18,7 +18,6 @@ struct jdm_allocator_callbacks_struct
     void* param;
 };
 
-typedef enum jdm_message_level_enum jdm_message_level;
 enum jdm_message_level_enum
 {
     JDM_MESSAGE_LEVEL_NONE = 0,
@@ -30,6 +29,7 @@ enum jdm_message_level_enum
     JDM_MESSAGE_LEVEL_CRIT,
     JDM_MESSAGE_LEVEL_FATAL,
 };
+typedef enum jdm_message_level_enum jdm_message_level;
 
 GCC_ONLY(__attribute__((warn_unused_result)))
 const char* jdm_message_level_str(jdm_message_level level);
@@ -44,7 +44,7 @@ GCC_ONLY(__attribute__((nonnull(1, 2))))
 void jdm_get_stacktrace(const char* const** stack_trace_out, uint32_t* stack_trace_count_out);
 
 GCC_ONLY(__attribute__((warn_unused_result)))
-const char* jdm_get_thread_name();
+const char* jdm_get_thread_name(void);
 
 void jdm_set_message_level(jdm_message_level level);
 

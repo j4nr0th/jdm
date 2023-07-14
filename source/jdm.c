@@ -120,7 +120,7 @@ void jdm_get_stacktrace(const char* const** stack_trace_out, uint32_t* stack_tra
     *stack_trace_out = JDM_THREAD_ERROR_STATE.stack_traces;
 }
 
-const char* jdm_get_thread_name(){
+const char* jdm_get_thread_name(void){
     return JDM_THREAD_ERROR_STATE.thrd_name;
 }
 
@@ -140,6 +140,7 @@ void jdm_leave_function(const char* fn_name, uint32_t level)
     {
         assert(JDM_THREAD_ERROR_STATE.stacktrace_count == level + 1);
         assert(JDM_THREAD_ERROR_STATE.stack_traces[level] == fn_name);
+        (void)fn_name;
         JDM_THREAD_ERROR_STATE.stacktrace_count = level;
     }
     else
@@ -160,6 +161,7 @@ void jdm_push_va(
     struct jdm_message* message = JDM_THREAD_ERROR_STATE.allocator_callbacks.alloc(JDM_THREAD_ERROR_STATE.allocator_callbacks.param, sizeof(*message) + error_length);
     assert(message);
     size_t used = vsnprintf(message->message, error_length, fmt, args);
+    (void)used;
     assert(used + 1 == error_length);
     va_end(args);
     int32_t put_in_stack = 1;
