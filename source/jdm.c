@@ -195,7 +195,7 @@ void jdm_push(jdm_message_level level, uint32_t line, const char* file, const ch
 
 void jdm_report_fatal_va(uint32_t line, const char* file, const char* function, const char* fmt, va_list args)
 {
-    size_t len = vsnprintf(NULL, 0, fmt, args);
+    size_t len = vsnprintf(NULL, 0, fmt, args) + 1;
     char msg[len];
     vsnprintf(msg, len, fmt, args);
     if (JDM_THREAD_ERROR_STATE.hook){
