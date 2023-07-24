@@ -5,8 +5,16 @@ project(jdm C)
 
 set(CMAKE_C_STANDARD 11)
 
+option(JDM_BUILD_SHARED_LIBS "Build shared library instead of static" OFF)
 
-add_library(jdm SHARED source/jdm.c)
+if (JDM_BUILD_SHARED_LIBS)
+    set(JDM_LIBRARY_TYPE SHARED)
+else ()
+    set(JDM_LIBRARY_TYPE STATIC)
+endif ()
+
+
+add_library(jdm "${JDM_LIBRARY_TYPE}" source/jdm.c)
 target_sources(jdm PUBLIC FILE_SET jdm_headers TYPE HEADERS BASE_DIRS include FILES include/jdm.h)
 install(TARGETS jdm
         FILE_SET jdm_headers

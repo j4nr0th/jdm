@@ -40,21 +40,21 @@ _Thread_local jdm_state JDM_THREAD_ERROR_STATE;
 
 static void* wrap_alloc(void* param, uint64_t size)
 {
-    (void)param;
+    (void) param;
     return malloc(size);
 }
 
 static void wrap_free(void* param, void* ptr)
 {
-    (void)param;
+    (void) param;
     free(ptr);
 }
 
 static const jdm_allocator_callbacks DEFAULT_CALLBACKS =
         {
-            .alloc = wrap_alloc,
-            .free = wrap_free,
-            .param = NULL,
+                .alloc = wrap_alloc,
+                .free = wrap_free,
+                .param = NULL,
         };
 
 int jdm_init_thread(
@@ -80,7 +80,8 @@ int jdm_init_thread(
     JDM_THREAD_ERROR_STATE.thrd_name = name;
     assert(JDM_THREAD_ERROR_STATE.thrd_name != NULL);
     JDM_THREAD_ERROR_STATE.level = level;
-    JDM_THREAD_ERROR_STATE.errors = allocator_callbacks->alloc(allocator_callbacks->param, max_errors * sizeof(*JDM_THREAD_ERROR_STATE.errors));;
+    JDM_THREAD_ERROR_STATE.errors = allocator_callbacks->alloc(
+            allocator_callbacks->param, max_errors * sizeof(*JDM_THREAD_ERROR_STATE.errors));;
     if (!JDM_THREAD_ERROR_STATE.errors)
     {
         allocator_callbacks->free(allocator_callbacks->param, JDM_THREAD_ERROR_STATE.thrd_name);
@@ -89,7 +90,8 @@ int jdm_init_thread(
     assert(JDM_THREAD_ERROR_STATE.errors != NULL);
     JDM_THREAD_ERROR_STATE.error_capacity = max_errors;
 
-    JDM_THREAD_ERROR_STATE.stack_traces = allocator_callbacks->alloc(allocator_callbacks->param, max_stack_trace * sizeof(char*));
+    JDM_THREAD_ERROR_STATE.stack_traces = allocator_callbacks->alloc(
+            allocator_callbacks->param, max_stack_trace * sizeof(char*));
     if (!JDM_THREAD_ERROR_STATE.stack_traces)
     {
         allocator_callbacks->free(allocator_callbacks->param, JDM_THREAD_ERROR_STATE.errors);
@@ -105,22 +107,28 @@ int jdm_init_thread(
 void jdm_cleanup_thread(void)
 {
     assert(JDM_THREAD_ERROR_STATE.stacktrace_count == 0);
-    JDM_THREAD_ERROR_STATE.allocator_callbacks.free(JDM_THREAD_ERROR_STATE.allocator_callbacks.param, JDM_THREAD_ERROR_STATE.thrd_name);
+    JDM_THREAD_ERROR_STATE.allocator_callbacks.free(
+            JDM_THREAD_ERROR_STATE.allocator_callbacks.param, JDM_THREAD_ERROR_STATE.thrd_name);
     for (uint32_t i = 0; i < JDM_THREAD_ERROR_STATE.error_count; ++i)
     {
-        JDM_THREAD_ERROR_STATE.allocator_callbacks.free(JDM_THREAD_ERROR_STATE.allocator_callbacks.param, JDM_THREAD_ERROR_STATE.errors[i]);
+        JDM_THREAD_ERROR_STATE.allocator_callbacks.free(
+                JDM_THREAD_ERROR_STATE.allocator_callbacks.param, JDM_THREAD_ERROR_STATE.errors[i]);
     }
-    JDM_THREAD_ERROR_STATE.allocator_callbacks.free(JDM_THREAD_ERROR_STATE.allocator_callbacks.param, JDM_THREAD_ERROR_STATE.errors);
-    JDM_THREAD_ERROR_STATE.allocator_callbacks.free(JDM_THREAD_ERROR_STATE.allocator_callbacks.param, JDM_THREAD_ERROR_STATE.stack_traces);
+    JDM_THREAD_ERROR_STATE.allocator_callbacks.free(
+            JDM_THREAD_ERROR_STATE.allocator_callbacks.param, JDM_THREAD_ERROR_STATE.errors);
+    JDM_THREAD_ERROR_STATE.allocator_callbacks.free(
+            JDM_THREAD_ERROR_STATE.allocator_callbacks.param, JDM_THREAD_ERROR_STATE.stack_traces);
     memset(&JDM_THREAD_ERROR_STATE, 0, sizeof(JDM_THREAD_ERROR_STATE));
 }
 
-void jdm_get_stacktrace(const char* const** stack_trace_out, uint32_t* stack_trace_count_out){
+void jdm_get_stacktrace(const char* const** stack_trace_out, uint32_t* stack_trace_count_out)
+{
     *stack_trace_count_out = JDM_THREAD_ERROR_STATE.stacktrace_count;
     *stack_trace_out = JDM_THREAD_ERROR_STATE.stack_traces;
 }
 
-const char* jdm_get_thread_name(void){
+const char* jdm_get_thread_name(void)
+{
     return JDM_THREAD_ERROR_STATE.thrd_name;
 }
 
@@ -140,7 +148,7 @@ void jdm_leave_function(const char* fn_name, uint32_t level)
     {
         assert(JDM_THREAD_ERROR_STATE.stacktrace_count == level + 1);
         assert(JDM_THREAD_ERROR_STATE.stack_traces[level] == fn_name);
-        (void)fn_name;
+        (void) fn_name;
         JDM_THREAD_ERROR_STATE.stacktrace_count = level;
     }
     else
@@ -153,21 +161,27 @@ void jdm_leave_function(const char* fn_name, uint32_t level)
 void jdm_push_va(
         jdm_message_level level, uint32_t line, const char* file, const char* function, const char* fmt, va_list args)
 {
-    if (level < JDM_THREAD_ERROR_STATE.level || JDM_THREAD_ERROR_STATE.error_count == JDM_THREAD_ERROR_STATE.error_capacity) return;
+    if (level < JDM_THREAD_ERROR_STATE.level ||
+        JDM_THREAD_ERROR_STATE.error_count == JDM_THREAD_ERROR_STATE.error_capacity)
+        return;
     va_list args1;
     va_copy(args1, args);
     const size_t error_length = vsnprintf(NULL, 0, fmt, args1) + 1;
     va_end(args1);
-    struct jdm_message* message = JDM_THREAD_ERROR_STATE.allocator_callbacks.alloc(JDM_THREAD_ERROR_STATE.allocator_callbacks.param, sizeof(*message) + error_length);
+    struct jdm_message* message = JDM_THREAD_ERROR_STATE.allocator_callbacks.alloc(
+            JDM_THREAD_ERROR_STATE.allocator_callbacks.param, sizeof(*message) + error_length);
     assert(message);
     size_t used = vsnprintf(message->message, error_length, fmt, args);
-    (void)used;
+    (void) used;
     assert(used + 1 == error_length);
     va_end(args);
     int32_t put_in_stack = 1;
     if (JDM_THREAD_ERROR_STATE.hook)
     {
-        put_in_stack = JDM_THREAD_ERROR_STATE.hook(JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stacktrace_count, JDM_THREAD_ERROR_STATE.stack_traces, level, line, file, function, message->message, JDM_THREAD_ERROR_STATE.hook_param);
+        put_in_stack = JDM_THREAD_ERROR_STATE.hook(
+                JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stacktrace_count,
+                JDM_THREAD_ERROR_STATE.stack_traces, level, line, file, function, message->message,
+                JDM_THREAD_ERROR_STATE.hook_param);
     }
 
     if (put_in_stack)
@@ -186,7 +200,9 @@ void jdm_push_va(
 
 void jdm_push(jdm_message_level level, uint32_t line, const char* file, const char* function, const char* fmt, ...)
 {
-    if (level < JDM_THREAD_ERROR_STATE.level || JDM_THREAD_ERROR_STATE.error_count == JDM_THREAD_ERROR_STATE.error_capacity) return;
+    if (level < JDM_THREAD_ERROR_STATE.level ||
+        JDM_THREAD_ERROR_STATE.error_count == JDM_THREAD_ERROR_STATE.error_capacity)
+        return;
     va_list args;
     va_start(args, fmt);
     jdm_push_va(level, line, file, function, fmt, args);
@@ -201,9 +217,15 @@ void jdm_report_fatal_va(uint32_t line, const char* file, const char* function, 
     va_end(cpy);
     char msg[len];
     vsnprintf(msg, len, fmt, args);
-    if (JDM_THREAD_ERROR_STATE.hook){
-        JDM_THREAD_ERROR_STATE.hook(JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stacktrace_count, JDM_THREAD_ERROR_STATE.stack_traces, JDM_MESSAGE_LEVEL_FATAL, line, file, function, msg, JDM_THREAD_ERROR_STATE.hook_param);
-    }else{
+    if (JDM_THREAD_ERROR_STATE.hook)
+    {
+        JDM_THREAD_ERROR_STATE.hook(
+                JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stacktrace_count,
+                JDM_THREAD_ERROR_STATE.stack_traces, JDM_MESSAGE_LEVEL_FATAL, line, file, function, msg,
+                JDM_THREAD_ERROR_STATE.hook_param);
+    }
+    else
+    {
         fprintf(stderr, "Critical error:\n%s", msg);
         fprintf(stderr, "\t(%s : %s", JDM_THREAD_ERROR_STATE.thrd_name, JDM_THREAD_ERROR_STATE.stack_traces[0]);
         for (uint32_t i = 1; i < JDM_THREAD_ERROR_STATE.stacktrace_count; ++i)
@@ -229,7 +251,9 @@ void jdm_process(jdm_error_report_fn function, void* param)
     for (i = 0; i < JDM_THREAD_ERROR_STATE.error_count; ++i)
     {
         struct jdm_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - i];
-        const int32_t ret = function(JDM_THREAD_ERROR_STATE.error_count, i, msg->level, msg->line, msg->file, msg->function, msg->message, param);
+        const int32_t ret = function(
+                JDM_THREAD_ERROR_STATE.error_count, i, msg->level, msg->line, msg->file, msg->function, msg->message,
+                param);
         if (ret < 0) break;
     }
     for (uint32_t j = 0; j < i; ++j)
@@ -248,7 +272,9 @@ void jdm_peek(jdm_error_report_fn function, void* param)
     for (i = 0; i < JDM_THREAD_ERROR_STATE.error_count; ++i)
     {
         struct jdm_message* msg = JDM_THREAD_ERROR_STATE.errors[JDM_THREAD_ERROR_STATE.error_count - 1 - i];
-        const int32_t ret = function(JDM_THREAD_ERROR_STATE.error_count, JDM_THREAD_ERROR_STATE.error_count - 1 - i, msg->level, msg->line, msg->file, msg->function, msg->message, param);
+        const int32_t ret = function(
+                JDM_THREAD_ERROR_STATE.error_count, JDM_THREAD_ERROR_STATE.error_count - 1 - i, msg->level, msg->line,
+                msg->file, msg->function, msg->message, param);
         if (ret < 0) break;
     }
 }

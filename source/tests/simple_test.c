@@ -15,10 +15,14 @@
 #define DBG_STOP (void)0
 #endif
 
-int err_hook(const char* thread_name, uint32_t stack_trace_count, const char*const* stack_trace,
-                                 jdm_message_level level, uint32_t line, const char* file, const char* function, const char* message, void* param)
+int err_hook(
+        const char* thread_name, uint32_t stack_trace_count, const char* const* stack_trace,
+        jdm_message_level level, uint32_t line, const char* file, const char* function, const char* message,
+        void* param)
 {
-    printf("Got a message from thread \"%s\" with a level of %u on line %u from file %s in function %s, that says: \"%s\"\n", thread_name, (unsigned )level, line, file, function, message);
+    printf(
+            "Got a message from thread \"%s\" with a level of %u on line %u from file %s in function %s, that says: \"%s\"\n",
+            thread_name, (unsigned) level, line, file, function, message);
     return 0;
 }
 
@@ -33,7 +37,7 @@ int main()
             32,
             32,
             NULL
-            ) == 0);
+                          ) == 0);
     JDM_ENTER_FUNCTION;
 
     jdm_set_hook(err_hook, NULL);
